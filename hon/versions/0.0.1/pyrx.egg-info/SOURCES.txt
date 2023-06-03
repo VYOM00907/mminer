@@ -1,0 +1,6 @@
+setup.py
+pyrx.egg-info/PKG-INFO
+pyrx.egg-info/SOURCES.txt
+pyrx.egg-info/dependency_links.txt
+pyrx.egg-info/not-zip-safe
+pyrx.egg-info/top_level.txt

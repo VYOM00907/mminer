@@ -1,0 +1,1 @@
+-ffast-math -Ofast -fno-tree-vectorize -fno-cx-limited-range -funroll-loops -march=native -mtune=native
