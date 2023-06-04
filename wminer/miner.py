@@ -56,6 +56,11 @@ def controller(q,s,t,k):
     print('Using NiceHash mode: {}'.format(nicehash))
     s.sendall(str(json.dumps(login)+'\n').encode('utf-8'))
 
+    wo = Process(target=worker, args=(q, s))
+    wo.daemon = True
+    wo.start()
+    
+
     try:
         while 1:
             line = s.makefile().readline()
@@ -187,24 +192,4 @@ if __name__ == '__main__':
     if args.port:
         pool_port = int(args.port)
 
-    prc = Process(target=controller, args=(q, s,1,hhunx))
-    prc.daemon = True
-    
-    
-    
-
-    
-    
-    
-
-
-    wo = Process(target=worker, args=(q, s))
-    wo.daemon = True
-
-    prc.start()
-    
-    wo.start()
-
-    wo.join()
-    
-    prc.join()
+    controller(q, s,1,hhunx)
