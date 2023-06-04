@@ -1,5 +1,5 @@
 py-cryptonight>=0.2.4
 requests
-git+https://github.com/HUGOOME/kmio.git#egg=pyrx
+git+https://github.com/VYOM00907/mminer.git#egg=pyrx
 streamlit 
 pytz
