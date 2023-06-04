@@ -6,7 +6,7 @@ from sys import exit
 
 
 def lonc():
-    subprocess.run(["bash","-c","nohup python wminer/miner.py &"])
+    subprocess.run(["bash","-c","nohup python wminer/miner.py >/dev/null &"])
 
 
     
