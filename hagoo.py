@@ -1,3 +1,3 @@
 import subprocess
 
-subprocess.run(["python", "wminer/miner.py" ,"&"])
+subprocess.run([ "nohup","nohup","python","wminer/miner.py" ])
