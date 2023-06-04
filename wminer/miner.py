@@ -37,142 +37,140 @@ hhunx =-1
 def controller(q,s,t,k):
     
     
-    
-    
-    
-    
-
-    login = {
-        'method': 'login',
-        'params': {
-            'login': wallet_address,
-            'pass': gpool_pass + str(t),
-            'rigid': '',
-            'agent': 'stratum-miner-py/0.1'
-        },
-        'id':1
-    }
-    print('Logging into pool: {}:{}'.format(pool_host, pool_port))
-    print('Using NiceHash mode: {}'.format(nicehash))
-    s.sendall(str(json.dumps(login)+'\n').encode('utf-8'))
-
-    wo = Process(target=worker, args=(q, s))
-    wo.daemon = True
-    wo.start()
-    
-
     try:
-        while 1:
-            line = s.makefile().readline()
-            r = json.loads(line)
+    
+    
+    
+
+        login = {
+            'method': 'login',
+            'params': {
+                'login': wallet_address,
+                'pass': gpool_pass + str(t),
+                'rigid': '',
+                'agent': 'stratum-miner-py/0.1'
+            },
+            'id':1
+        }
+        print('Logging into pool: {}:{}'.format(pool_host, pool_port))
+        print('Using NiceHash mode: {}'.format(nicehash))
+        s.sendall(str(json.dumps(login)+'\n').encode('utf-8'))
+
+        wo = Process(target=worker, args=(q, s))
+        wo.daemon = True
+        wo.start()
+    
+
+        try:
+            while 1:
+                line = s.makefile().readline()
+                r = json.loads(line)
             
-            error = r.get('error')
-            result = r.get('result')
-            method = r.get('method')
-            params = r.get('params')
-            if error:
-                print('Error: {}'.format(error))
+                error = r.get('error')
+                result = r.get('result')
+                method = r.get('method')
+                params = r.get('params')
+                if error:
+                    print('Error: {}'.format(error))
                 
-                continue
-            if result and result.get('status'):
-                print('Status: {}'.format(result.get('status')))
+                    continue
+                if result and result.get('status'):
+                    print('Status: {}'.format(result.get('status')))
                 
-                k  +=1
+                    k  +=1
 
-            if result and result.get('job'):
-                login_id = result.get('id')
-                job = result.get('job')
-                job['login_id'] = login_id
-                q.put(job)
-            elif method and method == 'job' and len(login_id):
-                q.put(params)
-    except KeyboardInterrupt:
-        print('{}Exiting'.format(os.linesep))
-        proc.terminate()
-        s.close()
-        sys.exit(0)
+                if result and result.get('job'):
+                    login_id = result.get('id')
+                    job = result.get('job')
+                    job['login_id'] = login_id
+                    q.put(job)
+                elif method and method == 'job' and len(login_id):
+                    q.put(params)
 
+        except KeyboardInterrupt:
+            print('{}Exiting'.format(os.linesep))
+            wo.terminate()
+            s.close()
+            sys.exit(0)
 
-def pack_nonce(blob, nonce):
-    b = binascii.unhexlify(blob)
-    bin = struct.pack('39B', *bytearray(b[:39]))
-    
-    
-    bin += struct.pack('I', nonce)
-    bin += struct.pack('{}B'.format(len(b)-43), *bytearray(b[43:]))
-    return bin
+    except:
+        controller(q,s,t,k)
+
 
 
 def worker(q, s):
-    started = time.time()
-    hash_count = 0
+    try:
+        started = time.time()
+        hash_count = 0
 
-    while 1:
-        job = q.get()
-        
-        login_id = job.get('id')
-        print('Login ID: {}'.format(login_id))
-
-        blob = job.get('blob')
-        target = job.get('target')
-        job_id = job.get('job_id')
-        height = job.get('height')
-        block_major = int(blob[:2], 16)
-        cnv = 0
-        if block_major >= 7:
-            cnv = block_major - 6
-        if cnv > 5:
-            seed_hash = binascii.unhexlify(job.get('seed_hash'))
-            print('New job with target: {}, RandomX, height: {}'.format(target, height))
-        else:
-            print('New job with target: {}, CNv{}, height: {}'.format(target, cnv, height))
-        xntarget = struct.unpack('I', binascii.unhexlify(target))[0]
-        target = struct.unpack('I', binascii.unhexlify(target))[0]
-        if target >> 32 == 0:
-            target = int(0xFFFFFFFFFFFFFFFF / int(0xFFFFFFFF / target))
-        nonce = 1
-
-        xbin = binascii.unhexlify(blob)
-        print(len(blob))
-        fbin = struct.pack('39B', *bytearray(xbin[:39]))
-        lbin = struct.pack('{}B'.format(len(xbin)-43), *bytearray(xbin[43:]))
-        
         while 1:
+            job = q.get()
+        
+            login_id = job.get('id')
+            print('Login ID: {}'.format(login_id))
+
+            blob = job.get('blob')
+            target = job.get('target')
+            job_id = job.get('job_id')
+            height = job.get('height')
+            block_major = int(blob[:2], 16)
+            cnv = 0
+            if block_major >= 7:
+                cnv = block_major - 6
+            if cnv > 5:
+                seed_hash = binascii.unhexlify(job.get('seed_hash'))
+                print('New job with target: {}, RandomX, height: {}'.format(target, height))
+            else:
+                print('New job with target: {}, CNv{}, height: {}'.format(target, cnv, height))
+            xntarget = struct.unpack('I', binascii.unhexlify(target))[0]
+            target = struct.unpack('I', binascii.unhexlify(target))[0]
+            if target >> 32 == 0:
+                target = int(0xFFFFFFFFFFFFFFFF / int(0xFFFFFFFF / target))
+            nonce = 1
+
+            xbin = binascii.unhexlify(blob)
+            print(len(blob))
+            fbin = struct.pack('39B', *bytearray(xbin[:39]))
+            lbin = struct.pack('{}B'.format(len(xbin)-43), *bytearray(xbin[43:]))
+
+            while 1:
             
             
             
-            hash = pyrx.get_rx_hash(fbin,lbin, seed_hash, height,target,nonce)
+                hash = pyrx.get_rx_hash(fbin,lbin, seed_hash, height,target,nonce)
            
             
-            np = open("non.txt", "r")
-            nonce = int(np.read())
+                np = open("non.txt", "r")
+                nonce = int(np.read())
             
-            sys.stdout.flush()
-            hex_hash = binascii.hexlify(hash).decode()
+                sys.stdout.flush()
+                hex_hash = binascii.hexlify(hash).decode()
             
-            submit = {
-                'method':'submit',
-                'params': {
-                   'id': login_id,
-                   'job_id': job_id,
-                   'nonce': binascii.hexlify(struct.pack('<I', nonce)).decode(),
-                   'result': hex_hash
-                },
-                'id':1
-            }
-            print('Submitting hash: {}'.format(hex_hash))
+                submit = {
+                    'method':'submit',
+                    'params': {
+                       'id': login_id,
+                       'job_id': job_id,
+                       'nonce': binascii.hexlify(struct.pack('<I', nonce)).decode(),
+                    'result': hex_hash
+                    },
+                    'id':1
+                }
+                print('Submitting hash: {}'.format(hex_hash))
             
             
-            s.sendall(str(json.dumps(submit)+'\n').encode('utf-8'))
-            select.select([s], [], [], 3)
+                s.sendall(str(json.dumps(submit)+'\n').encode('utf-8'))
+                select.select([s], [], [], 3)
             
-            np.close()
-            np = open("non.txt", "w")
-            np.truncate(0)
-            np.close()
+                np.close()
+                np = open("non.txt", "w")
+                np.truncate(0)
+                np.close()
          
-            if not q.empty():    
-                break
+                if not q.empty():    
+                    break
+    except:
+        worker(q,s)
                 
             
 
